@@ -1,0 +1,158 @@
+services:
+  # Laravel Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: androidbible-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - androidbible
+    depends_on:
+      - pgsql
+      - redis
+      - meilisearch
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: androidbible-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - androidbible
+    depends_on:
+      - app
+
+  # PostgreSQL 16
+  pgsql:
+    image: postgres:16-alpine
+    container_name: androidbible-pgsql
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: androidbible
+      POSTGRES_USER: androidbible
+      POSTGRES_PASSWORD: secret
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgsql-data:/var/lib/postgresql/data
+    networks:
+      - androidbible
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U androidbible"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: androidbible-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - androidbible
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Meilisearch
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: androidbible-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch-data:/meili_data
+    networks:
+      - androidbible
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Laravel Reverb WebSocket Server
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: androidbible-reverb
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    volumes:
+      - .:/var/www
+    ports:
+      - "8080:8080"
+    networks:
+      - androidbible
+    depends_on:
+      - redis
+      - pgsql
+
+  # Laravel Horizon Queue Worker
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: androidbible-horizon
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan horizon
+    volumes:
+      - .:/var/www
+    networks:
+      - androidbible
+    depends_on:
+      - redis
+      - pgsql
+
+  # Laravel Queue Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: androidbible-scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: >
+      sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    volumes:
+      - .:/var/www
+    networks:
+      - androidbible
+    depends_on:
+      - pgsql
+      - redis
+
+volumes:
+  pgsql-data:
+    driver: local
+  redis-data:
+    driver: local
+  meilisearch-data:
+    driver: local
+
+networks:
+  androidbible:
+    driver: bridge
