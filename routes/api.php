@@ -44,6 +44,11 @@ Route::prefix('v1')->group(function () {
     Route::get('/versions/{version}', [\App\Http\Controllers\Api\BibleVersionController::class, 'show'])->name('api.versions.show');
     Route::get('/versions/{version}/books', [\App\Http\Controllers\Api\BookController::class, 'index'])->name('api.books.index');
 
+    // Public: Verse of the Day & Sharing
+    Route::get('/verse-of-the-day', [\App\Http\Controllers\Api\VerseOfTheDayController::class, 'today'])->name('api.votd');
+    Route::get('/share/verse/{ari}', [\App\Http\Controllers\Api\ShareController::class, 'verse'])->name('api.share.verse');
+    Route::get('/share/verse/{ari}/image', [\App\Http\Controllers\Api\ShareController::class, 'verseImage'])->name('api.share.verse.image');
+
     // ── Protected Routes ───────────────────────────────────────────────
 
     Route::middleware('auth:sanctum')->group(function () {
