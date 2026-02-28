@@ -40,6 +40,9 @@ class User extends Authenticatable
     public function preferences() { return $this->hasOne(UserPreference::class); }
     public function syncEvents() { return $this->hasMany(SyncEvent::class); }
     public function syncStates() { return $this->hasMany(SyncState::class); }
+    public function searchHistory() { return $this->hasMany(SearchHistory::class); }
+    public function readingHistory() { return $this->hasMany(ReadingHistory::class); }
+    public function userBibleVersions() { return $this->hasMany(UserBibleVersion::class); }
 
     public function getNextSyncVersion(): int
     {

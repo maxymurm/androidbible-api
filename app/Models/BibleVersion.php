@@ -15,6 +15,7 @@ class BibleVersion extends Model
         'description', 'publisher', 'copyright', 'year',
         'has_old_testament', 'has_new_testament', 'has_apocrypha',
         'is_active', 'sort_order', 'verse_count', 'text_direction',
+        'download_url', 'file_size', 'download_count',
     ];
 
     protected function casts(): array

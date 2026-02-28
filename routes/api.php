@@ -61,6 +61,35 @@ Route::prefix('v1')->group(function () {
         Route::get('/verses/{ari}', [\App\Http\Controllers\Api\VerseController::class, 'showByAri'])->name('api.verses.show-by-ari');
         Route::get('/search', [\App\Http\Controllers\Api\SearchController::class, 'search'])->name('api.search');
 
+        // Cross-references & Footnotes
+        Route::get('/versions/{version}/cross-references/{ari}', [\App\Http\Controllers\Api\CrossReferenceController::class, 'forVerse'])->name('api.cross-references.verse');
+        Route::get('/versions/{version}/cross-references/chapter/{bookId}/{chapter}', [\App\Http\Controllers\Api\CrossReferenceController::class, 'forChapter'])->name('api.cross-references.chapter');
+        Route::get('/versions/{version}/footnotes/{ari}', [\App\Http\Controllers\Api\FootnoteController::class, 'forVerse'])->name('api.footnotes.verse');
+        Route::get('/versions/{version}/footnotes/chapter/{bookId}/{chapter}', [\App\Http\Controllers\Api\FootnoteController::class, 'forChapter'])->name('api.footnotes.chapter');
+
+        // Compare versions
+        Route::get('/compare/verse/{ari}', [\App\Http\Controllers\Api\CompareController::class, 'compareVerse'])->name('api.compare.verse');
+        Route::get('/compare/chapter/{bookId}/{chapter}', [\App\Http\Controllers\Api\CompareController::class, 'compareChapter'])->name('api.compare.chapter');
+
+        // Version Manager
+        Route::get('/my-versions', [\App\Http\Controllers\Api\VersionManagerController::class, 'myVersions'])->name('api.my-versions.index');
+        Route::post('/versions/{version}/download', [\App\Http\Controllers\Api\VersionManagerController::class, 'download'])->name('api.versions.download');
+        Route::delete('/versions/{version}/download', [\App\Http\Controllers\Api\VersionManagerController::class, 'remove'])->name('api.versions.remove');
+        Route::post('/versions/{version}/favorite', [\App\Http\Controllers\Api\VersionManagerController::class, 'toggleFavorite'])->name('api.versions.favorite');
+        Route::put('/my-versions/reorder', [\App\Http\Controllers\Api\VersionManagerController::class, 'reorder'])->name('api.my-versions.reorder');
+        Route::post('/versions/{version}/mark-read', [\App\Http\Controllers\Api\VersionManagerController::class, 'markAsRead'])->name('api.versions.mark-read');
+
+        // Reading History & Navigation
+        Route::get('/reading-history', [\App\Http\Controllers\Api\ReadingHistoryController::class, 'index'])->name('api.reading-history.index');
+        Route::post('/reading-history', [\App\Http\Controllers\Api\ReadingHistoryController::class, 'record'])->name('api.reading-history.record');
+        Route::get('/reading-history/last', [\App\Http\Controllers\Api\ReadingHistoryController::class, 'lastRead'])->name('api.reading-history.last');
+        Route::delete('/reading-history', [\App\Http\Controllers\Api\ReadingHistoryController::class, 'clear'])->name('api.reading-history.clear');
+
+        // Search History & Suggestions
+        Route::get('/search/history', [\App\Http\Controllers\Api\SearchController::class, 'history'])->name('api.search.history');
+        Route::get('/search/suggestions', [\App\Http\Controllers\Api\SearchController::class, 'suggestions'])->name('api.search.suggestions');
+        Route::delete('/search/history', [\App\Http\Controllers\Api\SearchController::class, 'clearHistory'])->name('api.search.clear-history');
+
         // Markers (bookmarks, notes, highlights)
         Route::apiResource('markers', \App\Http\Controllers\Api\MarkerController::class);
 
