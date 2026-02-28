@@ -119,6 +119,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/songbooks', [\App\Http\Controllers\Api\SongBookController::class, 'index'])->name('api.songbooks.index');
         Route::get('/songbooks/{songBook}', [\App\Http\Controllers\Api\SongBookController::class, 'show'])->name('api.songbooks.show');
         Route::get('/songbooks/{songBook}/songs', [\App\Http\Controllers\Api\SongController::class, 'index'])->name('api.songs.index');
+        Route::get('/songs/search', [\App\Http\Controllers\Api\SongController::class, 'search'])->name('api.songs.search');
         Route::get('/songs/{song}', [\App\Http\Controllers\Api\SongController::class, 'show'])->name('api.songs.show');
 
         // Sync
