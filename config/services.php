@@ -47,4 +47,8 @@ return [
         'redirect' => env('APPLE_REDIRECT_URL', '/api/v1/auth/social/apple/callback'),
     ],
 
+    'fcm' => [
+        'server_key' => env('FCM_SERVER_KEY'),
+    ],
+
 ];

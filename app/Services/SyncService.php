@@ -82,6 +82,30 @@ class SyncService
 
         foreach ($clientEvents as $clientEvent) {
             try {
+                // Check for conflicts (same entity modified by another device)
+                $existingEvent = $user->syncEvents()
+                    ->where('entity_gid', $clientEvent['entity_gid'])
+                    ->where('device_id', '!=', $deviceId)
+                    ->where('action', '!=', 'delete')
+                    ->orderByDesc('version')
+                    ->first();
+
+                if ($existingEvent && $clientEvent['action'] === 'update') {
+                    // Field-level conflict resolution: merge non-conflicting fields
+                    $serverFields = $existingEvent->changed_fields ?? [];
+                    $clientFields = $clientEvent['changed_fields'] ?? [];
+                    $conflictingFields = array_intersect($serverFields, $clientFields);
+
+                    if (!empty($conflictingFields)) {
+                        // Last-write-wins for conflicting fields, merge others
+                        $mergedPayload = array_merge(
+                            $existingEvent->payload ?? [],
+                            $clientEvent['payload']
+                        );
+                        $clientEvent['payload'] = $mergedPayload;
+                    }
+                }
+
                 $event = $this->recordEvent(
                     $user,
                     $clientEvent['entity_type'],

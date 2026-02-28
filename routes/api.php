@@ -128,6 +128,10 @@ Route::prefix('v1')->group(function () {
             Route::get('/status', [\App\Http\Controllers\Api\SyncController::class, 'status'])->name('api.sync.status');
         });
 
+        // Push Notifications (sync fallback)
+        Route::post('/push-notifications/sync-nudge', [\App\Http\Controllers\Api\PushNotificationController::class, 'sendSyncNudge'])->name('api.push.sync-nudge');
+        Route::put('/push-notifications/token', [\App\Http\Controllers\Api\PushNotificationController::class, 'updateToken'])->name('api.push.update-token');
+
         // User Preferences
         Route::get('/preferences', [\App\Http\Controllers\Api\UserPreferenceController::class, 'index'])->name('api.preferences.index');
         Route::put('/preferences', [\App\Http\Controllers\Api\UserPreferenceController::class, 'update'])->name('api.preferences.update');
