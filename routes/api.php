@@ -32,6 +32,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->name('api.auth.login');
         Route::post('/forgot-password', [\App\Http\Controllers\Api\AuthController::class, 'forgotPassword'])->name('api.auth.forgot-password');
         Route::post('/reset-password', [\App\Http\Controllers\Api\AuthController::class, 'resetPassword'])->name('api.auth.reset-password');
+
+        // Social/OAuth login
+        Route::post('/social/{provider}/token', [\App\Http\Controllers\Api\SocialAuthController::class, 'loginWithToken'])->name('api.auth.social.token');
+        Route::get('/social/{provider}/redirect', [\App\Http\Controllers\Api\SocialAuthController::class, 'redirect'])->name('api.auth.social.redirect');
+        Route::get('/social/{provider}/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'callback'])->name('api.auth.social.callback');
     });
 
     // Public Bible endpoints
@@ -48,6 +53,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/user', [\App\Http\Controllers\Api\AuthController::class, 'user'])->name('api.auth.user');
         Route::put('/auth/user', [\App\Http\Controllers\Api\AuthController::class, 'updateProfile'])->name('api.auth.update-profile');
         Route::post('/auth/devices', [\App\Http\Controllers\Api\AuthController::class, 'registerDevice'])->name('api.auth.register-device');
+        Route::delete('/auth/social/{provider}', [\App\Http\Controllers\Api\SocialAuthController::class, 'disconnect'])->name('api.auth.social.disconnect');
 
         // Bible Content
         Route::get('/versions/{version}/books/{book}/chapters', [\App\Http\Controllers\Api\ChapterController::class, 'index'])->name('api.chapters.index');
