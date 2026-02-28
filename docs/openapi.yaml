@@ -1,0 +1,399 @@
+openapi: 3.0.3
+info:
+  title: Android Bible API
+  description: |
+    REST API for the Android Bible application.
+    Provides Bible content, user authentication, markers (bookmarks, notes, highlights),
+    reading plans, devotionals, songs, real-time sync via WebSocket, and more.
+  version: 1.0.0
+  contact:
+    name: Android Bible
+    url: https://github.com/maxymurm/androidbible-api
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://api.androidbible.app/api/v1
+    description: Production
+
+tags:
+  - name: Health
+    description: Health check endpoint
+  - name: Auth
+    description: Authentication and user management
+  - name: Bible
+    description: Bible versions, books, chapters, verses
+  - name: Search
+    description: Full-text Bible search
+  - name: Markers
+    description: Bookmarks, notes, and highlights
+  - name: Labels
+    description: Categories/tags for markers
+  - name: Progress
+    description: Reading progress pins
+  - name: Reading Plans
+    description: Bible reading plans
+  - name: Devotionals
+    description: Daily devotional content
+  - name: Songs
+    description: Song books and hymns
+  - name: Sync
+    description: Cross-device sync
+  - name: Preferences
+    description: User preferences
+  - name: Share
+    description: Verse sharing and image generation
+  - name: Version Manager
+    description: User's downloaded Bible versions
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  version: { type: string, example: "1.0.0" }
+                  timestamp: { type: string, format: date-time }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string, example: John Doe }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                password_confirmation: { type: string }
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+                      token: { type: string }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /versions:
+    get:
+      tags: [Bible]
+      summary: List Bible versions
+      parameters:
+        - name: language
+          in: query
+          schema: { type: string }
+          description: Filter by language code (e.g., en, es)
+      responses:
+        '200':
+          description: List of Bible versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/BibleVersion' }
+
+  /versions/{version}:
+    get:
+      tags: [Bible]
+      summary: Get version details with books
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema: { type: string }
+          description: Version slug (e.g., kjv)
+      responses:
+        '200':
+          description: Version details
+
+  /versions/{version}/books:
+    get:
+      tags: [Bible]
+      summary: List books for a version
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of books
+
+  /versions/{version}/books/{book}/chapters/{chapter}:
+    get:
+      tags: [Bible]
+      summary: Get verses for a chapter
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema: { type: string }
+        - name: book
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: chapter
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Chapter content with verses, pericopes, footnotes, markers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      version: { type: string }
+                      book: { type: string }
+                      chapter: { type: integer }
+                      verses:
+                        type: array
+                        items: { $ref: '#/components/schemas/Verse' }
+                      pericopes: { type: array }
+                      footnotes: { type: array }
+                      cross_ref_counts: { type: object }
+                      markers: { type: array }
+                      navigation:
+                        type: object
+                        properties:
+                          prev_chapter: { type: integer, nullable: true }
+                          next_chapter: { type: integer, nullable: true }
+
+  /search:
+    get:
+      tags: [Search]
+      summary: Full-text Bible search
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 200 }
+        - name: version
+          in: query
+          schema: { type: string }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 25 }
+      responses:
+        '200':
+          description: Search results (paginated)
+
+  /markers:
+    get:
+      tags: [Markers]
+      summary: List user's markers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: kind
+          in: query
+          schema: { type: integer, enum: [0, 1, 2] }
+          description: "0=bookmark, 1=note, 2=highlight"
+      responses:
+        '200':
+          description: Paginated markers
+    post:
+      tags: [Markers]
+      summary: Create a marker
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MarkerInput' }
+      responses:
+        '201':
+          description: Marker created
+
+  /sync/pull:
+    get:
+      tags: [Sync]
+      summary: Pull sync events since a version
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: since_version
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100 }
+      responses:
+        '200':
+          description: Sync events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      events: { type: array }
+                      latest_version: { type: integer }
+                      has_more: { type: boolean }
+
+  /sync/push:
+    post:
+      tags: [Sync]
+      summary: Push sync events from client
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  items:
+                    type: object
+                    required: [entity_type, entity_gid, action, payload]
+                    properties:
+                      entity_type: { type: string }
+                      entity_gid: { type: string }
+                      action: { type: string, enum: [create, update, delete] }
+                      payload: { type: object }
+                      changed_fields: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Push result
+
+  /verse-of-the-day:
+    get:
+      tags: [Share]
+      summary: Get Verse of the Day
+      parameters:
+        - name: version
+          in: query
+          schema: { type: string, default: kjv }
+      responses:
+        '200':
+          description: Verse of the day
+
+  /compare/verse/{ari}:
+    get:
+      tags: [Bible]
+      summary: Compare a verse across versions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ari
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: versions
+          in: query
+          required: true
+          schema: { type: string }
+          description: Comma-separated version slugs
+      responses:
+        '200':
+          description: Verse comparison
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum Token
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        avatar: { type: string, nullable: true }
+        locale: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    BibleVersion:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        short_name: { type: string }
+        name: { type: string }
+        language: { type: string }
+        language_name: { type: string }
+        has_old_testament: { type: boolean }
+        has_new_testament: { type: boolean }
+        verse_count: { type: integer }
+
+    Verse:
+      type: object
+      properties:
+        id: { type: integer }
+        ari: { type: integer, description: "Absolute Reference Integer = (bookId << 16) | (chapter << 8) | verse" }
+        verse_num: { type: integer }
+        text: { type: string }
+        text_formatted: { type: string }
+
+    MarkerInput:
+      type: object
+      required: [kind, ari]
+      properties:
+        kind: { type: integer, enum: [0, 1, 2], description: "0=bookmark, 1=note, 2=highlight" }
+        ari: { type: integer }
+        ari_end: { type: integer, nullable: true }
+        caption: { type: string, nullable: true }
+        highlight_color: { type: integer, nullable: true }
+        bible_version_slug: { type: string, nullable: true }
+        label_ids: { type: array, items: { type: integer } }
