@@ -92,6 +92,9 @@ Route::prefix('v1')->group(function () {
 
         // Markers (bookmarks, notes, highlights)
         Route::apiResource('markers', \App\Http\Controllers\Api\MarkerController::class);
+        Route::post('/markers/batch', [\App\Http\Controllers\Api\MarkerController::class, 'batchStore'])->name('api.markers.batch-store');
+        Route::delete('/markers/batch', [\App\Http\Controllers\Api\MarkerController::class, 'batchDestroy'])->name('api.markers.batch-destroy');
+        Route::get('/markers/export/all', [\App\Http\Controllers\Api\MarkerController::class, 'export'])->name('api.markers.export');
 
         // Labels (categories/tags for markers)
         Route::apiResource('labels', \App\Http\Controllers\Api\LabelController::class);

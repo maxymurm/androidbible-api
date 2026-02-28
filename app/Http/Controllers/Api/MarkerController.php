@@ -135,4 +135,87 @@ class MarkerController extends Controller
 
         return response()->json(null, 204);
     }
+
+    /**
+     * Batch create markers (e.g., multi-verse highlight).
+     */
+    public function batchStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'markers' => ['required', 'array', 'min:1', 'max:100'],
+            'markers.*.kind' => ['required', 'integer', 'in:0,1,2'],
+            'markers.*.ari' => ['required', 'integer'],
+            'markers.*.ari_end' => ['sometimes', 'nullable', 'integer'],
+            'markers.*.bible_version_slug' => ['sometimes', 'nullable', 'string'],
+            'markers.*.caption' => ['sometimes', 'nullable', 'string', 'max:10000'],
+            'markers.*.highlight_color' => ['sometimes', 'nullable', 'integer'],
+            'markers.*.verse_count' => ['sometimes', 'integer', 'min:1'],
+            'markers.*.label_ids' => ['sometimes', 'array'],
+        ]);
+
+        $created = [];
+        foreach ($validated['markers'] as $data) {
+            $labelIds = $data['label_ids'] ?? [];
+            unset($data['label_ids']);
+
+            $marker = $request->user()->markers()->create($data);
+            if (!empty($labelIds)) {
+                $marker->labels()->sync($labelIds);
+            }
+
+            $this->syncService->recordEvent(
+                $request->user(), 'marker', $marker->gid, 'create',
+                $marker->toArray(), $request->header('X-Device-Id')
+            );
+
+            $created[] = $marker->load('labels');
+        }
+
+        return response()->json(['data' => $created], 201);
+    }
+
+    /**
+     * Batch delete markers.
+     */
+    public function batchDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $markers = $request->user()->markers()->whereIn('id', $validated['ids'])->get();
+
+        foreach ($markers as $marker) {
+            $this->syncService->recordEvent(
+                $request->user(), 'marker', $marker->gid, 'delete',
+                ['gid' => $marker->gid], $request->header('X-Device-Id')
+            );
+            $marker->delete();
+        }
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Export all user markers as JSON.
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $markers = $request->user()->markers()
+            ->with('labels')
+            ->orderByDesc('marker_date')
+            ->get();
+
+        return response()->json([
+            'data' => $markers,
+            'meta' => [
+                'exported_at' => now()->toIso8601String(),
+                'total' => $markers->count(),
+                'bookmarks' => $markers->where('kind', Marker::KIND_BOOKMARK)->count(),
+                'notes' => $markers->where('kind', Marker::KIND_NOTE)->count(),
+                'highlights' => $markers->where('kind', Marker::KIND_HIGHLIGHT)->count(),
+            ],
+        ]);
+    }
 }
