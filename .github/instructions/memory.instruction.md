@@ -1,193 +1,222 @@
----
+﻿---
 applyTo: '**'
-lastUpdated: '2026-03-12 00:00'
-chatSession: 'session-001'
-projectName: 'Android Bible API'
+lastUpdated: '2026-03-12'
+chatSession: 'session-002'
+projectName: 'androidbible-api'
 ---
 
-# Project Memory - Android Bible API
+# Project Memory  androidbible-api (goldenBowl Laravel Backend)
 
 > **AGENT INSTRUCTIONS:** Always read this file FIRST before starting any new conversation. Update after completing tasks, making decisions, or when user says "remember this".
 
 ---
 
-## 🎯 Current Focus
+##  Current Focus
 
-**Active Phase:** Phase 13 — Feature Parity & Enhancement (inspired by PocketSword)
-**Active Issue:** None (scoping just completed)
-**Current Branch:** main
-**Last Activity:** 2026-03-12 — Full project initialization, agent setup, new issues created
+**Active Phase:** Phase 13  Sync Protocol & Delta Sync  
+**Active Issue:** None (scoping re-done with correct inspiration)  
+**Current Branch:** main  
+**Last Activity:** 2026-03-12  Re-scoped against actual inspiration: androidbible native Java  BibleCMP (Compose Multiplatform) porting guide. goldenBowl Laravel backend = reference implementation.
 
-**What Was Accomplished (Phases 1-12):**
-- ✅ Phase 1-2: Laravel foundation, PostgreSQL schema, migrations (12 tables)
-- ✅ Phase 3: Sanctum auth, social auth (Google/Apple), password reset
-- ✅ Phase 4: Bible content API (versions, books, chapters, verses, cross-refs, footnotes)
-- ✅ Phase 5: Markers system (bookmarks, notes, highlights, labels)
-- ✅ Phase 6: Real-time sync via Laravel Reverb (WebSocket)
-- ✅ Phase 7-8: Reading plans, devotionals, song books
-- ✅ Phase 9: Modern UI/UX API support (VOTD, share, history)
-- ✅ Phase 10: Testing & QA (Feature + Unit tests)
-- ✅ Phase 11: DevOps (Docker, GitHub Actions CI/CD, Horizon, scheduler)
-- ✅ Phase 12: Documentation (OpenAPI 3.0.3, CONTRIBUTING.md, MIGRATION.md)
-- All 85 issues on androidbible tracker closed
+**Phases 112 Complete:**
+-  Foundation, PostgreSQL schema, Sanctum auth, Bible content API
+-  Markers (bookmarks/notes/highlights/labels), Label management
+-  Real-time sync via Laravel Reverb WebSocket
+-  Reading plans, devotionals, song books
+-  VOTD, share, history, push notifications
+-  Docker, GitHub Actions CI/CD, Horizon, scheduler
+-  OpenAPI 3.0.3 docs, PHPUnit Feature+Unit tests
+-  85 original issues closed; all committed and pushed
 
-**New Issues Created (Phase 13+):**
-- See GitHub issues for androidbible-api repo
-
-**Next Steps:**
-1. Implement SWORD module management API (download, install, catalog)
-2. Add commentary controller (CommentaryController)
-3. Add dictionary/Strong's endpoints
-4. Expand sync to CRDT with vector clocks
-5. Add bookmark folders
-6. Add pins (quick-access verses)
-7. Add Inertia/React web frontend
-8. Add audio Bible endpoints
+**What's Next (Phase 13+):**
+1. Harden sync protocol to match goldenBowl reference (delta sync with revision tracking)
+2. OAuth improvements (Apple JWKS manual verification, Google ID token flow)
+3. Broadcasting enhancements (echo prevention device_id, conflict resolution)
+4. Version download catalog API (YES2 file downloads, goldenBowl catalog endpoint)
+5. Reading Plan sync endpoints
+6. Song/Devotion content APIs
+7. Production deployment hardening (Forge + DigitalOcean)
 
 ---
 
-## 👤 User Preferences
+##  User Preferences
 
-### Project-Specific
-- **Tech Stack:** Laravel 11 + PHP 8.4 + PostgreSQL 16 + Redis 7 + Meilisearch + Reverb
-- **Database:** PostgreSQL 16
-- **Architecture:** Monolithic Laravel (API + web in single repo), offline-first mobile
-- **Auth:** Sanctum (token-based), Socialite (Google/Apple)
+### Tech Stack
+- **Backend:** Laravel 11 + PHP 8.4 + PostgreSQL 16 + Redis 7 + Meilisearch + Reverb + Horizon
+- **Auth:** Sanctum (Bearer tokens), Socialite (Google/Apple)
 - **Queue:** Laravel Horizon
 - **Search:** Meilisearch via Laravel Scout
+- **Real-time:** Laravel Reverb (Pusher protocol)
 
 ### Coding Style
-- **Backend:** PSR-12, Laravel conventions, Form Request validation, thin controllers
-- **Commits:** Conventional commits with "Closes #N"
-- **Testing:** Feature tests + Unit tests, PHPUnit
-- **API:** RESTful, versioned under `/api/v1/`
+- PSR-12, Laravel conventions, Form Request validation, thin controllers
+- Conventional commits with "Closes #N"
+- Feature tests + Unit tests, PHPUnit/Pest
+- RESTful API under `/api/`
+- All responses: `{ "success": true, "data": {...} }` or Laravel Resources
 
 ### Git Workflow
-- **Branch:** main
-- **Commits:** Conventional commits (`feat:`, `fix:`, `docs:`, `test:`)
-- **Auto-push:** After every commit
-- **CI:** GitHub Actions (tests, Pint linting)
+- Branch: main  
+- Auto-push after every commit
 
 ---
 
-## 📁 Project File Map
+##  Project File Map
 
-### Key Directories
 ```
 androidbible-api/
-├── .github/
-│   ├── instructions/memory.instruction.md  ← THIS FILE
-│   ├── ISSUE_TEMPLATE/
-│   └── workflows/ci.yml
-├── agents/                  ← AI automation templates
-├── app/
-│   ├── Console/Commands/    ← Artisan commands (MigrateLegacyData, etc.)
-│   ├── Http/Controllers/    ← All controllers
-│   ├── Models/              ← Eloquent models
-│   └── Services/            ← Business logic services
-├── database/
-│   ├── migrations/          ← All 12 migrations
-│   └── seeders/
-├── docs/
-│   ├── PROJECT_DOCUMENTATION.md
-│   ├── openapi.yaml         ← OpenAPI 3.0.3 spec
-│   └── MIGRATION.md
-├── routes/
-│   ├── api.php              ← All API routes
-│   └── channels.php         ← WebSocket channels
-└── tests/
-    ├── Feature/             ← Feature tests
-    └── Unit/                ← Unit tests
+ .github/
+    instructions/memory.instruction.md   THIS FILE
+    ISSUE_TEMPLATE/
+    workflows/ci.yml
+ agents/                   AI automation templates
+    AUTONOMOUS_PROMPT_API.md
+ app/
+    Http/Controllers/Api/
+       Auth/             AuthController, SocialAuthController
+       BroadcastingAuthController.php
+       SyncController.php
+       MarkerController.php
+       LabelController.php
+       ...
+    Models/               User, Marker, Label, MarkerLabel, Device, etc.
+    Services/SyncService.php
+ database/migrations/      All 12+ migrations
+ docs/PROJECT_DOCUMENTATION.md
+ routes/
+    api.php               All API routes
+    channels.php          WebSocket channels
+ tests/Feature+Unit/
 ```
 
-### Feature → File Mapping
-- **Auth:** `AuthController.php`, `SocialAuthController.php`
-- **Bible Content:** `BibleController.php`, `VerseController.php`
-- **Markers:** `MarkerController.php`, `LabelController.php`
-- **Sync:** `SyncController.php`, `SyncService.php`
-- **Reading Plans:** `ReadingPlanController.php`
-- **Songs:** `SongController.php`
-- **Devotionals:** `DevotionalController.php`
-- **Push:** `PushNotificationController.php`
-- **VOTD:** `VerseOfTheDayController.php`
-- **History:** `ReadingHistoryController.php`
+### Feature  File Mapping (goldenBowl reference)
+| Feature | File |
+|---------|------|
+| Auth login/register | `Controllers/Api/Auth/AuthController.php` |
+| Google/Apple OAuth | `Controllers/Api/Auth/SocialAuthController.php` |
+| Delta sync | `Controllers/Api/SyncController.php` + `Services/SyncService.php` |
+| WebSocket auth | `Controllers/Api/BroadcastingAuthController.php` |
+| Markers | `Controllers/Api/MarkerController.php` |
+| Labels | `Controllers/Api/LabelController.php` |
+| Broadcast events | `app/Events/MarkerCreated.php`, `MarkerUpdated.php`, etc. |
+| Channel auth | `routes/channels.php` |
 
 ---
 
-## 💭 Recent Decisions & Context
+##  API Reference (goldenBowl style)
 
-### 2026-03-12
+**Base URL:** `https://writings.gadsda.com/api` (production)  
+**Auth:** `Authorization: Bearer {sanctum_token}`
 
-#### Project Architecture Decision
-**Decision:** Monolithic Laravel (API + future web frontend in same repo)
-**Rationale:** Simpler deployment, shared models/services, Laravel Inertia can be added later
+### Key Endpoints
+```
+POST /api/auth/login            { user, device_id, access_token }
+POST /api/auth/register         same
+POST /api/auth/oauth/{provider}  google | apple
+POST /api/auth/logout
+PUT  /api/auth/change-password
+DELETE /api/auth/account
 
-#### Feature Gap Analysis vs PocketSword
-**Missing from API vs PocketSword inspiration:**
-1. SWORD module management (download/install/catalog via CrossWire)
-2. Commentary API (separate from Bible verses)
-3. Dictionary/Strong's numbers API
-4. Bookmark folders (hierarchical)
-5. Pins (quick-access verses, different from bookmarks)
-6. CRDT vector clock sync (currently event sourcing only)
-7. Web frontend (Inertia.js + React)
-8. Audio Bible endpoints
-9. Verse image generation
-10. Rich text notes (currently plain text)
-11. Partial verse highlighting (character offsets)
-12. Module source management
-13. Reading history with duration tracking
-14. Data export (DOCX/PDF)
+GET  /api/user                  { id, name, email, sync_revision }
+
+POST /api/sync/                 delta sync (send changes, receive changes)
+GET  /api/sync/status           { sync_revision, last_sync_at }
+GET  /api/sync/full             all user data
+GET  /api/sync/delta?since=N    changes since revision N
+POST /api/sync/device           register device
+GET  /api/sync/devices
+
+POST /api/broadcasting/auth     WebSocket channel auth (Sanctum-based, NOT session)
+```
+
+### Sync Request Shape
+```json
+{
+  "revision": 40,
+  "device_id": "uuid-v4",
+  "sync_set_name": "all",
+  "markers": [{ "gid": "...", "action": "upsert|delete", "ari": N, "kind": N, ... }],
+  "labels": [{ "gid": "...", "action": "upsert|delete", "title": "...", "ordering": N }],
+  "progress_marks": [{ "gid": "...", "action": "upsert|delete", "preset_id": N, "ari": N }]
+}
+```
+
+### Broadcast Events (Reverb  Pusher protocol)
+Channel: `private-user.{userId}`
+Events: `marker.created`, `marker.updated`, `marker.deleted`, `label.updated`, `progress.updated`
 
 ---
 
-## 🧩 Patterns & Architecture
+##  Patterns & Architecture
 
 ### ARI Encoding
 ```
-ari = (bookId << 16) | (chapter << 8) | verse
-```
-Used throughout for verse references.
-
-### Sync Protocol
-- Event sourcing via `sync_events` table
-- Version vectors for conflict resolution
-- WebSocket (Reverb) for real-time push
-- Push notification fallback (FCM/APNs)
-- Offline mutation queue with retry
-
-### API Response Format
-All API responses follow Laravel Resource pattern:
-```json
-{ "data": { ... } }
-// or for lists:
-{ "data": [ ... ], "meta": { "total": N, "current_page": N } }
+ari = (bookId shl 16) or (chapter shl 8) or verse
 ```
 
-### Marker Kinds
-- 0 = Bookmark
-- 1 = Note
-- 2 = Highlight
+### Sync Protocol (goldenBowl)
+```
+Client  POST /api/sync/ with changes + client revision
+Server  DB::transaction():
+  1. Apply client changes
+  2. Detect & resolve conflicts (last-write-wins / SyncShadow)
+  3. Increment server revision
+  4. Return server changes since client revision
+  5. Broadcast to other devices via Reverb
+Client  Apply server changes in SQLDelight transaction
+Client  Update local sync_revision
+Other devices  Receive via WebSocket, apply locally
+```
+
+### Echo Prevention
+- Every sync payload includes `device_id`
+- Server broadcasts skip the originating device
+- Clients filter incoming WebSocket events by device_id
+
+### Conflict Resolution
+- `SyncShadow` table tracks last-known server state per entity
+- If both client and server changed the same entity  conflict
+- Server wins by default (overwrite with server version + notify client)
+
+### Auth Pattern
+```
+POST /api/auth/login  Sanctum creates personal access token
+Token stored securely client-side (iOS Keychain / Android Keystore)
+Sent as: Authorization: Bearer {token}
+Tokens don't expire (persist until logout or account deletion)
+```
+
+### Apple Sign-In (manual JWKS)
+```php
+// Server manually verifies Apple identity JWT:
+// 1. Fetch JWKS from https://appleid.apple.com/auth/keys
+// 2. Find matching key by kid
+// 3. Verify JWT signature using RS256
+// 4. Validate iss=https://appleid.apple.com, aud=com.app.bundle, exp
+// 5. Extract sub (Apple user ID), email
+```
 
 ---
 
-## 🔧 Things to Remember
+##  Things to Remember
 
-- **GitHub Repo:** https://github.com/maxymurm/androidbible-api
-- **Project Board:** To be created (see agents/create_board.ps1)
-- **Laravel Herd:** Available locally on Windows (PHP 8.4.16)
-- **Docker:** `docker-compose up -d` starts all 8 services
-- **Tests:** `php artisan test`
-- **Push:** `git push origin main`
-- **Issue tracker:** Issues created on this repo (androidbible-api)
+- **Repo:** https://github.com/maxymurm/androidbible-api
+- **Reference backend:** goldenBowl (writings.gadsda.com)
+- **Marker kinds:** 1=bookmark, 2=note, 3=highlight (NOT 0-indexed)
+- **GIDs:** UUID v4, generated client-side
+- **Sync is transactional:** All mutations in a single DB::transaction()
+- **Reverb production:** REVERB_HOST=0.0.0.0, REVERB_PORT=8080, behind Nginx proxy
+- **Broadcasting auth:** Must use Sanctum Bearer (NOT session cookie) for mobile
+- **PHP versions:** 8.4 only (no 8.2/8.3 compatibility needed)
 
 ---
 
-## 📊 Project Statistics
+##  Project Statistics
 
-- **Total Issues Created:** See GitHub
-- **Phases Completed:** 12 of 12 original + new enhancement phases
-- **Test Coverage:** 40+ tests
-- **API Endpoints:** 50+ routes
-- **Models:** 18
-- **Migrations:** 12
+**Phases Completed:** 12 of 12 original  
+**In Progress:** Phase 13+ (goldenBowl feature alignment)  
+**Test Coverage:** 40+ tests (Feature + Unit)  
+**API Endpoints:** 50+ routes  
+**Eloquent Models:** 18  
+**Migrations:** 12  
+**Real-time Channels:** private-user.{userId}

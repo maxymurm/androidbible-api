@@ -1,436 +1,233 @@
-# Android Bible API — Project Documentation
+﻿# Project Documentation  androidbible-api
 
 **Repository:** https://github.com/maxymurm/androidbible-api  
-**Type:** Laravel 11 REST API + WebSocket backend  
-**Status:** Active development — Phases 1-12 complete, Phase 13+ in progress  
-**Last Updated:** 2026-03-12  
+**Type:** Laravel 11 REST API + WebSocket backend for BibleCMP  
+**Reference:** goldenBowl Laravel backend (writings.gadsda.com)  
+**Language:** PHP 8.4  
+**Date:** 2026-03-12
 
 ---
 
-## Table of Contents
+## Project Overview
 
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Technology Stack](#technology-stack)
-4. [Project Structure](#project-structure)
-5. [Database Schema](#database-schema)
-6. [API Reference Summary](#api-reference-summary)
-7. [Completed Phases (1–12)](#completed-phases)
-8. [Roadmap (Phase 13+)](#roadmap)
-9. [Development Setup](#development-setup)
-10. [Testing](#testing)
-11. [Deployment](#deployment)
+androidbible-api is the Laravel 11 backend powering the **BibleCMP** Compose Multiplatform Bible app. It provides:
+- Authentication (email/password + Google/Apple OAuth via Sanctum)
+- Delta sync for markers, labels, and reading progress
+- Real-time broadcasting (Laravel Reverb  Pusher protocol)
+- Bible content serving (versions catalog, reading plans, devotions, songs)
+- Version download catalog (YES2 files)
 
----
-
-## Overview
-
-Android Bible API is the Laravel 11 backend for the Android Bible app — an open-source, offline-first Bible study application. It serves Bible content, user annotations (bookmarks, notes, highlights), reading plans, devotionals, songs, and real-time cross-device synchronization.
-
-**Core values:**
-- Offline-first (sync on reconnect, no data loss)
-- Open standard (SWORD module compatibility)
-- Privacy-respecting (user owns their data)
-- Extensible (plugins, custom Bible versions)
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────┐
-│                Laravel 11 API               │
-│  ┌─────────────┐  ┌──────────────────────┐  │
-│  │  REST API   │  │  Reverb WebSockets   │  │
-│  │  /api/v1/   │  │  sync.* channels     │  │
-│  └─────────────┘  └──────────────────────┘  │
-│  ┌─────────────┐  ┌──────────────────────┐  │
-│  │  Postgresql │  │     Meilisearch      │  │
-│  │  (primary)  │  │     (full-text)      │  │
-│  └─────────────┘  └──────────────────────┘  │
-│  ┌─────────────┐  ┌──────────────────────┐  │
-│  │    Redis    │  │   Horizon (queues)   │  │
-│  │   (cache)   │  │   (bg processing)    │  │
-│  └─────────────┘  └──────────────────────┘  │
-└─────────────────────────────────────────────┘
-         ↑                   ↑
-    Android/iOS KMP     Web Frontend (future)
-```
-
-### Request Flow
-1. HTTP request → `routes/api.php` → Controller → FormRequest validation
-2. Controller calls Service (business logic)
-3. Service uses Eloquent Models / Repositories
-4. Response via Laravel Resources (JSON)
-
-### Sync Flow
-1. Client mutation → `POST /api/v1/sync/push` (batch of events)
-2. `SyncService::processBatch()` applies events with conflict resolution
-3. `SyncEvent` broadcast → `sync.{user_id}` Reverb channel
-4. All other devices receive push update
+The API design mirrors the **goldenBowl** reference implementation deployed at `https://writings.gadsda.com`.
 
 ---
 
 ## Technology Stack
 
-| Component         | Technology            | Version  |
-|-------------------|----------------------|---------|
-| Framework         | Laravel               | 11.x    |
-| Language          | PHP                   | 8.4     |
-| Database          | PostgreSQL            | 16      |
-| Cache             | Redis                 | 7       |
-| Search            | Meilisearch           | latest  |
-| WebSocket         | Laravel Reverb        | 1.x     |
-| Queue Dashboard   | Laravel Horizon       | 5.x     |
-| Auth              | Laravel Sanctum       | 4.x     |
-| Social Auth       | Laravel Socialite     | 5.x     |
-| Testing           | PHPUnit               | 11.x    |
-| Container         | Docker + Compose      | -       |
+| Layer | Technology |
+|-------|-----------|
+| Framework | Laravel 11 |
+| Language | PHP 8.4 |
+| Database | PostgreSQL 16 |
+| Cache / Queue | Redis 7 |
+| Search | Meilisearch + Laravel Scout |
+| Real-time | Laravel Reverb (WebSocket) |
+| Auth | Laravel Sanctum + Socialite |
+| Queue Dashboard | Laravel Horizon |
+| Testing | PHPUnit / Pest |
+| CI/CD | GitHub Actions |
+| Container | Docker (8 services) |
+| Production | Laravel Forge + DigitalOcean/Hetzner |
 
 ---
 
-## Project Structure
+## Phases Completed (112)
 
-```
-app/
-├── Console/Commands/
-│   └── MigrateLegacyData.php
-├── Events/
-│   └── SyncEventBroadcast.php
-├── Http/
-│   ├── Controllers/
-│   │   ├── AuthController.php
-│   │   ├── BibleController.php
-│   │   ├── BookController.php
-│   │   ├── ChapterController.php
-│   │   ├── CommentaryController.php        (Phase 13 - planned)
-│   │   ├── DevotionalController.php
-│   │   ├── DictionaryController.php        (Phase 13 - planned)
-│   │   ├── LabelController.php
-│   │   ├── MarkerController.php
-│   │   ├── ModuleController.php            (Phase 13 - planned)
-│   │   ├── PinController.php               (Phase 13 - planned)
-│   │   ├── PushNotificationController.php
-│   │   ├── ReadingHistoryController.php
-│   │   ├── ReadingPlanController.php
-│   │   ├── SocialAuthController.php
-│   │   ├── SongController.php
-│   │   ├── SyncController.php
-│   │   ├── UserController.php
-│   │   └── VerseOfTheDayController.php
-│   ├── Requests/
-│   └── Resources/
-├── Models/
-│   ├── BibleVersion.php
-│   ├── Book.php
-│   ├── Chapter.php
-│   ├── Verse.php
-│   ├── User.php
-│   ├── Device.php
-│   ├── Marker.php
-│   ├── Label.php
-│   ├── Pin.php                             (Phase 13 - planned)
-│   ├── BookmarkFolder.php                  (Phase 13 - planned)
-│   ├── ReadingPlan.php
-│   ├── Devotional.php
-│   ├── Song.php
-│   ├── SyncEvent.php
-│   └── ReadingHistory.php
-├── Services/
-│   ├── SyncService.php
-│   ├── ModuleService.php                   (Phase 13 - planned)
-│   └── SearchService.php
-database/
-├── migrations/
-│   ├── 2025_01_01_000001_create_users_table.php
-│   ├── 2025_01_01_000002_create_devices_table.php
-│   ├── 2025_01_01_000003_create_bible_versions_table.php
-│   ├── 2025_01_01_000004_create_books_table.php
-│   ├── 2025_01_01_000005_create_chapters_table.php
-│   ├── 2025_01_01_000006_create_verses_table.php
-│   ├── 2025_01_01_000007_create_markers_table.php
-│   ├── 2025_01_01_000008_create_labels_table.php
-│   ├── 2025_01_01_000009_create_sync_events_table.php
-│   ├── 2025_01_01_000010_create_reading_plans_table.php
-│   ├── 2025_01_01_000011_create_devotionals_table.php
-│   └── 2025_01_01_000012_create_songs_table.php
-routes/
-├── api.php
-└── channels.php
-```
+| Phase | Description | Issues |
+|-------|-------------|--------|
+| 1 | Foundation & Infrastructure | 9 |
+| 2 | Database Schema & Core Models | 12 |
+| 3 | Authentication & User Management | 6 |
+| 4 | Bible Core Features (content API) | 9 |
+| 5 | Markers System (CRUD API) | 9 |
+| 6 | Real-time Sync (Reverb/WebSocket) | 6 |
+| 7 | Reading Plans & Devotionals | 5 |
+| 8 | Song Books & Hymns | 4 |
+| 9 | UI/UX API Support | 9 |
+| 10 | Testing & QA | 5 |
+| 11 | DevOps & Deployment | 6 |
+| 12 | Documentation & Launch | 5 |
 
 ---
 
-## Database Schema
+## Phase Plan (13+)  goldenBowl Feature Alignment
 
-### Core Tables
+### Phase 13: Sync Protocol Hardening
+**Goal:** Match goldenBowl sync protocol exactly  
+**Issues:** ~10
 
-| Table           | Key Columns                                          | Purpose                        |
-|-----------------|------------------------------------------------------|-------------------------------|
-| users           | id, email, name, password, gid, preferences (json)   | User accounts                 |
-| devices         | id, user_id, platform, push_token, last_sync_at      | Per-device sync tracking      |
-| bible_versions  | id, code, name, language, sword_module               | Bible translations             |
-| books           | id, version_id, book_num, name, abbreviation         | Bible books                   |
-| chapters        | id, book_id, chapter_num                             | Bible chapters                |
-| verses          | id, chapter_id, verse_num, text, ari                 | Bible verses                  |
-| markers         | id, user_id, verse_id, kind, color, note, gid        | Bookmarks/Notes/Highlights     |
-| labels          | id, user_id, name, color                             | Marker grouping labels        |
-| sync_events     | id, user_id, device_id, kind, payload (json)         | Event log for sync             |
-| reading_plans   | id, user_id, title, days_json, progress_json         | Reading plan tracking          |
-| devotionals     | id, date, title, body, verse_ref                     | Daily devotionals              |
-| songs           | id, title, lyrics, book_ref                         | Hymns/songs                   |
+- [ ] Implement `POST /api/sync/` with delta sync + revision tracking
+- [ ] Implement `SyncShadow` model for conflict detection (last-write-wins)
+- [ ] Echo prevention: filter broadcasts by `device_id`
+- [ ] `GET /api/sync/delta?since=N` endpoint
+- [ ] `GET /api/sync/full` endpoint
+- [ ] `POST /api/sync/device`  device registration
+- [ ] `GET /api/sync/devices` + `DELETE /api/sync/devices/{id}`
+- [ ] Sync SyncState table (revisionId, lastSyncAt per syncSetName)
+- [ ] Rate limiting on sync endpoints (`throttle:sync`)
+- [ ] Sync logs endpoint for debugging
 
-### Planned Tables (Phase 13+)
+### Phase 14: Real-time Broadcasting
+**Goal:** Full Pusher protocol broadcasting via Reverb  
+**Issues:** ~8
 
-| Table           | Key Columns                                          | Purpose                        |
-|-----------------|------------------------------------------------------|-------------------------------|
-| pins            | id, user_id, verse_id, note, gid                    | Quick-access verse pins        |
-| bookmark_folders| id, user_id, name, parent_id, color                 | Nested bookmark folders        |
-| modules         | id, name, type, language, installed, source_url     | SWORD module registry          |
-| reading_history | id, user_id, verse_id, duration_ms, started_at      | Detailed reading history       |
+- [ ] `POST /api/broadcasting/auth`  Sanctum-based channel auth (NOT session)
+- [ ] `MarkerCreated`, `MarkerUpdated`, `MarkerDeleted` broadcast events
+- [ ] `LabelUpdated` broadcast event
+- [ ] `ProgressUpdated` broadcast event
+- [ ] Private channel: `private-user.{userId}`
+- [ ] Reverb production config (REVERB_HOST=0.0.0.0, Nginx proxy)
+- [ ] Test WebSocket broadcasting end-to-end
+- [ ] Rate limiting on broadcasting auth
+
+### Phase 15: Authentication Enhancements
+**Goal:** Full goldenBowl auth feature set  
+**Issues:** ~8
+
+- [ ] Apple Sign-In: manual JWKS verification (not Socialite  Apple uses JWT)
+- [ ] `POST /api/auth/forgot-password`  email reset link
+- [ ] `POST /api/auth/reset-password` with token
+- [ ] `DELETE /api/auth/account`  full account + data deletion
+- [ ] `GET /api/user` with `sync_revision` and `last_sync_at`
+- [ ] Multi-device token management
+- [ ] Device type (`android | ios | web`) in device registration
+- [ ] Token invalidation on account deletion
+
+### Phase 16: Version Catalog & Downloads
+**Goal:** Serve YES2 Bible version files and catalog  
+**Issues:** ~8
+
+- [ ] `GET /api/versions`  catalog of available YES2 versions
+- [ ] `GET /api/versions/{id}/download`  download YES2 file
+- [ ] Version metadata (locale, shortName, longName, description, fileSize)
+- [ ] CDN integration for large YES2 file serving
+- [ ] Bundled/internal version metadata
+- [ ] Per-language version grouping
+- [ ] Version changelog API
+- [ ] Admin: upload new YES2 version files
+
+### Phase 17: Reading Plans & Content
+**Goal:** Comprehensive content API for plans, devotions, songs  
+**Issues:** ~10
+
+- [ ] Reading plan CRUD + progress sync
+- [ ] `GET /api/reading-plans`  list all plans
+- [ ] `POST /api/reading-plans/{id}/progress`  mark daily reading
+- [ ] Devotional content API (daily, by date)
+- [ ] Song database API (browse, search, lyrics)
+- [ ] VOTD (Verse of the Day) with date-based variation
+- [ ] `GET /api/health`  health check endpoint
+- [ ] CORS configuration for client apps
+- [ ] API versioning preparation
+
+### Phase 18: Production Deployment
+**Goal:** Production-grade deployment  
+**Issues:** ~8
+
+- [ ] Laravel Forge configuration (DigitalOcean/Hetzner)
+- [ ] Production `.env` hardening (no debug, secure keys)
+- [ ] Nginx reverse proxy config (PHP-FPM + Reverb WebSocket)
+- [ ] SSL/TLS with Let's Encrypt
+- [ ] Horizon dashboard secured (`/horizon`)
+- [ ] PostgreSQL backup automation
+- [ ] Zero-downtime deployment (GitHub Actions  Forge)
+- [ ] Monitoring with Sentry/BugSnag
 
 ---
 
-## API Reference Summary
+## API Endpoints Summary
 
-### Authentication
 ```
-POST   /api/v1/auth/register
-POST   /api/v1/auth/login
-POST   /api/v1/auth/logout
-POST   /api/v1/auth/refresh
-GET    /api/v1/auth/user
-POST   /api/v1/auth/social/{provider}
-POST   /api/v1/auth/forgot-password
-POST   /api/v1/auth/reset-password
-```
+POST /api/auth/login
+POST /api/auth/register
+POST /api/auth/oauth/{provider}   (google | apple)
+POST /api/auth/logout
+PUT  /api/auth/change-password
+DELETE /api/auth/account
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
 
-### Bible Content
-```
-GET    /api/v1/bible/versions
-GET    /api/v1/bible/versions/{version}/books
-GET    /api/v1/bible/versions/{version}/books/{book}/chapters
-GET    /api/v1/bible/versions/{version}/books/{book}/chapters/{chapter}/verses
-GET    /api/v1/bible/verse/{ari}
-GET    /api/v1/bible/verse-of-the-day
-GET    /api/v1/bible/search?q={query}&version={version}
-```
+GET  /api/user
 
-### Markers (Bookmarks, Notes, Highlights)
-```
-GET    /api/v1/markers
-POST   /api/v1/markers
-GET    /api/v1/markers/{gid}
-PUT    /api/v1/markers/{gid}
-DELETE /api/v1/markers/{gid}
-GET    /api/v1/labels
-POST   /api/v1/labels
-PUT    /api/v1/labels/{id}
-DELETE /api/v1/labels/{id}
-```
+GET  /api/sync/status
+POST /api/sync/
+GET  /api/sync/full
+GET  /api/sync/delta
+POST /api/sync/device
+GET  /api/sync/devices
+DELETE /api/sync/devices/{id}
+GET  /api/sync/logs
 
-### Sync
-```
-POST   /api/v1/sync/push
-GET    /api/v1/sync/pull?since={timestamp}
-GET    /api/v1/sync/status
-```
+POST /api/broadcasting/auth
 
-### Reading Plans
-```
-GET    /api/v1/reading-plans
-POST   /api/v1/reading-plans
-GET    /api/v1/reading-plans/{id}
-PUT    /api/v1/reading-plans/{id}/progress
-```
+GET  /api/versions
+GET  /api/versions/{id}/download
 
-### Planned Endpoints (Phase 13+)
-```
-GET    /api/v1/modules
-GET    /api/v1/modules/{name}/commentary/{book}/{chapter}/{verse}
-GET    /api/v1/modules/{name}/dictionary/{key}
-GET    /api/v1/bible/strongs/{number}
-GET    /api/v1/pins
-POST   /api/v1/pins
-DELETE /api/v1/pins/{gid}
-GET    /api/v1/bookmark-folders
-POST   /api/v1/bookmark-folders
+GET  /api/reading-plans
+POST /api/reading-plans/{id}/progress
+GET  /api/devotions/today
+GET  /api/songs
+GET  /api/songs/{id}
+
+GET  /api/health
 ```
 
 ---
 
-## Completed Phases
+## Database Schema (Key Tables)
 
-### Phase 1: Foundation & Infrastructure
-- Docker Compose (PHP-FPM, Nginx, PostgreSQL, Redis, Meilisearch, Reverb, Horizon)
-- GitHub Actions CI/CD pipeline
-- `.env` structure and secrets management
-
-### Phase 2: Database Schema & Core Models
-- 12 migrations (users through songs)
-- Eloquent models with relationships
-- Seeders for development data
-
-### Phase 3: Authentication & User Management
-- Sanctum token auth
-- Google + Apple OAuth via Socialite
-- Password reset (email tokens)
-- Device registration
-
-### Phase 4: Bible Core Features
-- Bible versions API
-- Books, chapters, verses endpoints
-- ARI-based verse references
-- Cross-reference and footnote support
-- Verse of the Day endpoint
-
-### Phase 5: Markers System
-- Unified Marker model (kind: 0=bookmark, 1=note, 2=highlight)
-- GID-based sync keys
-- Labels/collections for grouping
-
-### Phase 6: Real-time Sync
-- SyncController + SyncService
-- Event sourcing via sync_events
-- Reverb WebSocket channels (`sync.{user_id}`)
-- Version vector conflict resolution
-
-### Phase 7: Reading Plans & Devotionals
-- CRUD reading plans
-- Progress tracking
-- Devotionals (date-based)
-
-### Phase 8: Song Books & Hymns
-- Song model + CRUD API
-- Book reference tagging
-
-### Phase 9: UI/UX Support
-- VOTD endpoint
-- Verse sharing API
-- Reading history
-- Preferences (user JSON column)
-
-### Phase 10: Testing & QA
-- 40+ PHPUnit tests
-- Feature + Unit test suites
-- Test database seeding
-
-### Phase 11: DevOps & Deployment
-- GitHub Actions: lint + test on PR
-- Docker production configuration
-- Horizon queue monitoring
-- Scheduled tasks (VOTD rotation, sync cleanup)
-
-### Phase 12: Documentation
-- OpenAPI 3.0.3 specification (`docs/openapi.yaml`)
-- README with setup guide
-- CONTRIBUTING.md
-- MIGRATION.md (legacy Android migration guide)
+```sql
+users (id, name, email, password, sync_revision, last_sync_at)
+devices (id, user_id, device_id UUID, device_name, device_type, platform_version, app_version)
+markers (id, gid UUID, user_id, ari, kind, caption, verse_count, created_at, updated_at, deleted_at)
+labels (id, gid UUID, user_id, title, ordering, background_color, created_at, updated_at)
+marker_label (marker_id, label_id)
+progress_marks (id, gid UUID, user_id, preset_id, caption, ari, updated_at)
+sync_shadows (id, user_id, entity_type, entity_gid, last_revision)
+sync_logs (id, user_id, event, details, created_at)
+reading_plans (id, name, title, description, duration, start_time)
+reading_plan_progress (id, user_id, reading_plan_id, reading_code, check_time)
+songs (id, number, title, lyrics, created_at)
+devotions (id, date, title, content, ari, created_at)
+```
 
 ---
 
-## Roadmap
+## Running Locally
 
-### Phase 13: SWORD Module System
-- Module registry table
-- SWORD module download + install pipeline
-- CrossWire catalog API integration
-- Commentary API endpoints (per verse, per module)
-- Dictionary/Lexicon API endpoints
-- Strong's numbers index
-
-### Phase 14: Enhanced Annotations
-- Bookmark folders (hierarchical)
-- Pins model (quick-access verses)
-- 6-color highlight palette (distinct color model)
-- Rich-text notes (Markdown storage)
-- Tags/collections system
-
-### Phase 15: Web Frontend (Inertia.js + React)
-- Inertia.js setup in Laravel
-- SSR-ready React 19 components
-- Bible reader page
-- Markers management page
-- User dashboard
-
-### Phase 16: Advanced Search & Study Tools
-- Strong's number search endpoint
-- Morphology filter search
-- Word concordance API
-- Word study (all occurrences)
-- Advanced Meilisearch query DSL
-
-### Phase 17: Audio Bible & Media
-- Audio Bible module API
-- Streaming endpoints
-- Verse image generation
-- Media library management
-
-### Phase 18: Statistics & Export
-- Reading statistics (streaks, chapters/day)
-- Data export (DOCX/PDF generation)
-- Reading history detailed tracking (duration, scroll position)
-
----
-
-## Development Setup
-
-### Prerequisites
-- PHP 8.4 (Laravel Herd recommended on Windows)
-- Docker Desktop
-- GitHub CLI (`gh`)
-- Composer
-
-### Quick Start
 ```bash
-git clone https://github.com/maxymurm/androidbible-api.git
-cd androidbible-api
-cp .env.example .env
-composer install
+# Start all services
 docker-compose up -d
-php artisan key:generate
+
+# Run migrations
 php artisan migrate --seed
-php artisan serve
-```
 
-### Services (Docker)
-- PostgreSQL: `localhost:5432`
-- Redis: `localhost:6379`
-- Meilisearch: `localhost:7700`
-- Reverb: `localhost:8080`
-- Horizon UI: `/horizon`
+# Start queue
+php artisan horizon
 
----
+# Start WebSocket server
+php artisan reverb:start
 
-## Testing
-
-```bash
-# Run all tests
+# Run tests
 php artisan test
 
-# Run specific suite
-php artisan test --testsuite=Feature
-php artisan test --testsuite=Unit
-
-# With coverage
-php artisan test --coverage
+# Run linter
+./vendor/bin/pint
 ```
 
 ---
 
-## Deployment
+## Related Repositories
 
-### Docker (Production)
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-php artisan migrate --force
-php artisan config:cache
-php artisan route:cache
-php artisan horizon:start
-```
-
-### GitHub Actions
-CI pipeline runs on every PR:
-1. PHP Pint lint check
-2. PHPUnit test suite
-3. Builds Docker image (on main branch)
+- **KMP app:** https://github.com/maxymurm/androidbible-kmp
+- **Original Android app:** https://github.com/maxymurm/androidbible
+- **Reference backend:** goldenBowl (writings.gadsda.com)

@@ -1,283 +1,288 @@
-# AUTONOMOUS EXECUTION PROMPT — Android Bible API
-## Document Type: Opus-Level Autonomous Execution Prompt
-## Version: 1.0
-## Date: 2026-03-12
-## Track: Backend (Laravel 11 API)
+﻿# AUTONOMOUS EXECUTION PROMPT  androidbible-api (goldenBowl Laravel Backend)
+
+> **FOR AI AGENTS:** This document instructs you on how to autonomously develop the androidbible-api Laravel backend. Read this COMPLETELY before starting any task.
 
 ---
 
-## ⚡ YOLO MODE — FULL AUTONOMOUS EXECUTION
+## Project Identity
 
-You are an expert autonomous AI agent executing work on the **Android Bible API** — a Laravel 11 REST API backend for the Android Bible mobile app.
-
-**DO NOT** ask for clarification. **DO NOT** stop for approval. Work through open issues one by one, committing after each, until ALL issues are resolved or you run out of context.
-
----
-
-## 🔐 Repository Access
-
-```
-Repo:    https://github.com/maxymurm/androidbible-api.git
-Branch:  main
-Remote:  origin
-```
-
-### Before You Start
-1. `cd` into the project root
-2. Read `.github/instructions/memory.instruction.md` — project state, architecture, patterns
-3. Read `docs/PROJECT_DOCUMENTATION.md` — full architecture reference
-4. Run `php artisan route:list` to understand existing routes
-5. Run `php artisan test` to confirm all tests pass before starting work
+- **Repository:** https://github.com/maxymurm/androidbible-api
+- **Type:** Laravel 11 REST API + WebSocket backend
+- **Reference implementation:** goldenBowl (writings.gadsda.com)
+- **Mobile client:** androidbible-kmp (BibleCMP Compose Multiplatform)
+- **Original Android app:** androidbible (Java/Kotlin)
 
 ---
 
-## ✅ What Has Been Completed (Phases 1–12)
+## Mission
 
-All original 85 Android Bible issues are closed. The following is complete:
+Build the **goldenBowl** feature set in the androidbible-api Laravel backend. The reference is a production Laravel 11 app that provides:
+1. Sanctum auth (email/password + Google OAuth + Apple Sign-In with JWKS verification)
+2. Delta sync protocol (POST /api/sync/ with revision tracking + SyncShadow conflict detection)
+3. Real-time broadcasting via Reverb (Pusher protocol, Sanctum-authenticated channels)
+4. Version catalog API (YES2 Bible file downloads)
+5. Content APIs (reading plans, devotions, songs)
 
-- **Laravel 11 foundation**: PHP 8.4, PostgreSQL 16, Redis, Meilisearch, Reverb, Horizon, Sanctum
-- **Database schema**: 12 migrations (users, devices, bible_versions, books, chapters, verses, markers, labels, sync_events, reading_plans, devotionals, songs)
-- **Auth**: Sanctum token auth, Google + Apple OAuth (Socialite), password reset, device registration
-- **Bible content API**: all CRUD endpoints, ARI-based references, cross-refs, footnotes, VOTD
-- **Markers system**: unified Marker model (kind: 0=bookmark, 1=note, 2=highlight), GID sync keys, labels
-- **Sync engine**: SyncController + SyncService, event sourcing via sync_events, Reverb WebSocket broadcast
-- **Reading plans + Devotionals + Songs**: full CRUD APIs
-- **Testing**: 40+ PHPUnit tests (Feature + Unit)
-- **DevOps**: Docker Compose (8 services), GitHub Actions CI/CD, Horizon, Scheduler
-- **Docs**: OpenAPI 3.0.3 at `docs/openapi.yaml`, CONTRIBUTING.md, MIGRATION.md
+**Phases 112 are complete.** Continue from Phase 13 as specified below.
 
 ---
 
-## 📋 Open Issues to Implement
+## Operating Rules
 
-Issues are on GitHub: https://github.com/maxymurm/androidbible-api/issues
-
-### Phase 13: SWORD Module System (Milestone #1)
-
-| # | Title | Labels |
-|---|-------|--------|
-| #2 | Epic: SWORD Module System | epic, sword, phase-13 |
-| #16 | Create modules table and Module Eloquent model | backend, database, sword, phase-13 |
-| #18 | CrossWire module catalog API integration | backend, api, sword, phase-13 |
-| #20 | SWORD module download and install pipeline | backend, sword, phase-13 |
-| #22 | Commentary API endpoints per verse and module | backend, api, sword, phase-13 |
-| #24 | Dictionary and Lexicon API endpoints (RawLD4/zLD) | backend, api, sword, phase-13 |
-| #26 | Strong's numbers index and lookup API | backend, api, sword, phase-13 |
-| #47 | CRDT vector clock sync upgrade | backend, sync, phase-13 |
-
-### Phase 14: Enhanced Annotations (Milestone #2)
-
-| # | Title | Labels |
-|---|-------|--------|
-| #28 | Pins feature: model, migration, and CRUD API | backend, api, database, phase-14 |
-| #30 | Bookmark folders: hierarchical folders for bookmarks | backend, api, database, phase-14 |
-| #32 | 6-color highlight palette: extend highlights model | backend, api, phase-14 |
-| #34 | Rich-text notes: Markdown storage and content_format | backend, api, database, phase-14 |
-| #36 | Tags / collections system for markers | backend, api, database, phase-14 |
-
-### Phase 15: Web Frontend (Milestone #3)
-
-| # | Title | Labels |
-|---|-------|--------|
-| #37 | Inertia.js + React 19 web frontend setup | backend, phase-15 |
-| #38 | Bible reader web page (Inertia/React) | backend, api, phase-15 |
-| #39 | User dashboard and markers management web page | backend, phase-15 |
-
-### Phase 16: Advanced Search & Study Tools (Milestone #4)
-
-| # | Title | Labels |
-|---|-------|--------|
-| #40 | Advanced search: phrase, Strong's, morphology filters | backend, api, phase-16 |
-| #41 | Word study API: concordance and all occurrences | backend, api, phase-16 |
-
-### Phase 17: Audio Bible & Media (Milestone #5)
-
-| # | Title | Labels |
-|---|-------|--------|
-| #45 | Audio Bible module API endpoints | backend, api, sword, phase-17 |
-| #46 | Verse image generation endpoint | backend, api, phase-17 |
-
-### Phase 18: Statistics & Export (Milestone #6)
-
-| # | Title | Labels |
-|---|-------|--------|
-| #42 | Reading history detailed tracking | backend, database, phase-18 |
-| #43 | Reading statistics and streaks API | backend, api, phase-18 |
-| #44 | Data export: DOCX and PDF generation | backend, api, phase-18 |
+1. **Read memory.instruction.md FIRST**  `.github/instructions/memory.instruction.md`
+2. **One issue at a time.** Pick ONE GitHub issue, complete it fully, commit, push.
+3. **Update memory file** after every significant task or decision.
+4. **Thin controllers.** Move all business logic to Service classes.
+5. **Form Request validation.** Never validate in controllers directly.
+6. **Laravel conventions.** Follow Laravel idioms, PSR-12, use Eloquent properly.
+7. **Commit format:** `feat(scope): description [Closes #N]`
+8. **Never break existing tests.** Run `php artisan test` before every commit.
+9. **Sanctum only.** No JWT packages, no Passport. Sanctum Bearer tokens.
+10. **Sync is transactional.** Always wrap sync mutations in `DB::transaction()`.
 
 ---
 
-## 🏗️ Architecture Reference
+## Architecture Reference
 
-### Key Patterns
-
-**Controller + FormRequest + Resource pattern:**
+### Auth Flow (goldenBowl)
 ```php
-// app/Http/Controllers/ExampleController.php
-class ExampleController extends Controller
-{
-    public function __construct(private ExampleService $service) {}
+// Email/password login
+POST /api/auth/login
+{email, password, device_id, device_name, device_type}
+ creates Sanctum personal access token
+ registers Device if new
+ returns {user, device_id, access_token, token_type: "Bearer"}
+
+// Google OAuth
+POST /api/auth/oauth/google
+{token: "<Google ID token>", device_id, device_name, device_type}
+ Socialite::driver('google')->userFromToken($idToken)
+ findOrCreate User by email
+ return Sanctum token
+
+// Apple Sign-In
+POST /api/auth/oauth/apple
+{token: "<Apple identity JWT>", name, device_id, device_name, device_type}
+ Fetch JWKS from https://appleid.apple.com/auth/keys
+ Verify JWT signature (RS256) using matching kid
+ Validate: iss=https://appleid.apple.com, aud=bundle_id, exp
+ Extract sub (Apple user ID), email
+ findOrCreate User by provider+sub
+ return Sanctum token
+```
+
+### Sync Flow (goldenBowl)
+```php
+// SyncController.php
+POST /api/sync/
+Auth: Sanctum Bearer
+
+Request: {revision: N, device_id: UUID, sync_set_name, markers[], labels[], progress_marks[]}
+
+DB::transaction(function() use ($request, $user) {
+    // 1. Collect server changes since client revision
+    $serverChanges = $syncService->getChangesSince($user, $request->revision);
     
-    public function index(Request $request): JsonResponse
-    {
-        return response()->json([
-            'data' => ExampleResource::collection(
-                $this->service->getPaginated($request->user())
-            )
-        ]);
+    // 2. Apply client changes
+    foreach ($request->markers as $item) {
+        if ($item->action === 'upsert') {
+            $syncService->upsertMarker($user, $item);
+        } elseif ($item->action === 'delete') {
+            $syncService->deleteMarker($user, $item->gid);
+        }
     }
-}
-```
-
-**Service layer:**
-```php
-// app/Services/ExampleService.php
-class ExampleService
-{
-    public function getPaginated(User $user): LengthAwarePaginator
-    {
-        return Example::where('user_id', $user->id)->paginate(20);
-    }
-}
-```
-
-**Routes (api.php — versioned):**
-```php
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    Route::apiResource('examples', ExampleController::class);
+    // same for labels, progress_marks
+    
+    // 3. Increment server revision
+    $newRevision = $syncService->incrementRevision($user);
+    
+    // 4. Broadcast to other devices (skip sender via device_id)
+    event(new SyncCompleted($user, $request->device_id, $serverChanges));
+    
+    return response()->json([
+        'success' => true,
+        'server_revision' => $newRevision,
+        'markers' => $serverChanges->markers,
+        'labels' => $serverChanges->labels,
+        'progress_marks' => $serverChanges->progress_marks,
+    ]);
 });
 ```
 
-**Migrations:**
+### Broadcasting Auth (Sanctum, NOT session)
 ```php
-Schema::create('examples', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->string('gid')->unique(); // sync key
-    $table->timestamps();
-    $table->softDeletes();
+// BroadcastingAuthController.php
+// Must use Sanctum Bearer token authentication, NOT web session
+// Mobile clients don't have session cookies
+
+Route::post('/api/broadcasting/auth', function (Request $request) {
+    $request->validate(['socket_id' => 'required', 'channel_name' => 'required']);
+    $user = $request->user(); // resolved via Sanctum Bearer
+    return Broadcast::auth($request);
+})->middleware('auth:sanctum');
+
+// routes/channels.php
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
 });
 ```
 
-**ARI encoding:**
+### Conflict Resolution (SyncShadow)
 ```php
-$ari = ($bookId << 16) | ($chapter << 8) | $verse;
-```
+// SyncShadow tracks the last-known server state for each entity
+// If client AND server both changed the same entity since last sync:
+//    Server version wins (overwrite)
+//    Create SyncConflict record for audit
 
-**Marker kinds:**
-- `0` = Bookmark
-- `1` = Note
-- `2` = Highlight
-
-### Existing Models (reference relationships)
-- `User` hasMany `Marker`, `Device`, `SyncEvent`, `ReadingHistory`, `ReadingPlan`
-- `Marker` belongsTo `User`, `Verse`; belongsToMany `Label`
-- `BibleVersion` hasMany `Book`; `Book` hasMany `Chapter`; `Chapter` hasMany `Verse`
-
-### API Response Format
-```json
-{ "data": { ... } }
-// or paginated:
-{ "data": [...], "meta": { "current_page": 1, "total": 100 }, "links": {...} }
+// SyncShadow model: {user_id, entity_type, entity_gid, last_revision}
 ```
 
 ---
 
-## 🧰 Tools & Environment
+## Database Schema
 
-```bash
-# Docker services
-docker-compose up -d
+```sql
+-- Key tables:
+users              (id, name, email, password, sync_revision, last_sync_at)
+personal_access_tokens (Sanctum default)
+devices            (id, user_id, device_id UUID, device_name, device_type, platform_version, app_version)
+markers            (id, gid UUID, user_id, ari INT, kind INT, caption, verse_count, created_at, updated_at, deleted_at)
+labels             (id, gid UUID, user_id, title, ordering, background_color, created_at, updated_at)
+marker_label       (marker_id, label_id)
+progress_marks     (id, gid UUID, user_id, preset_id, caption, ari INT, updated_at)
+sync_shadows       (id, user_id, entity_type, entity_gid, last_revision)
+sync_logs          (id, user_id, event, details, created_at)
+reading_plans      (id, name, title, description, duration, start_time)
+reading_plan_progress (id, user_id, reading_plan_id, reading_code, check_time)
+songs              (id, number, title, lyrics)
+devotions          (id, date, title, content, ari)
+```
 
-# Run tests
-php artisan test
+### ARI Encoding
+```
+ari = (bookId << 16) | (chapter << 8) | verse
+Stored as plain INT in PostgreSQL
+```
 
-# Run specific test
-php artisan test tests/Feature/MarkerTest.php
-
-# Create migration
-php artisan make:migration create_examples_table
-
-# Create model with all stubs
-php artisan make:model Example -mfsc --api --requests --resource
-
-# Clear caches
-php artisan cache:clear && php artisan route:clear && php artisan config:clear
-
-# Git workflow
-git add -A
-git commit -m "feat: implement feature X (Closes #N)"
-git push origin main
+### Marker Kinds
+```
+1 = Bookmark
+2 = Note
+3 = Highlight
 ```
 
 ---
 
-## 📐 Execution Rules
+## Phase Execution Plan
 
-1. **Read the issue** fully before starting any code
-2. **Follow TDD** where feasible (write test first, then implement)
-3. **One commit per issue** with message `feat: {description} (Closes #N)`
-4. **Run `php artisan test`** before EVERY commit. Do not commit failing tests
-5. **Update `docs/openapi.yaml`** for every new or changed endpoint
-6. **Update `.github/instructions/memory.instruction.md`** after completing each issue
-7. **Close the issue** via commit message `Closes #N`
-8. **Tag with release** after completing each milestone (`git tag v13.0.0`)
-9. **Do not break existing tests** — if you must change existing behavior, update tests too
-10. **YOLO** — make decisions. Don't stop to ask. Commit and move on.
+### CURRENT: Phase 13  Sync Protocol Hardening (~10 issues)
+**Milestone:** "Phase 13: Sync Protocol"
+
+1. `[BE-S-01]` `SyncController`: implement `POST /api/sync/` with DB::transaction
+2. `[BE-S-02]` `SyncService`: `getChangesSince($user, $revision)`  query markers/labels/progress since revision
+3. `[BE-S-03]` `SyncService`: `upsertMarker/deleteMarker/upsertLabel/upsertProgress`
+4. `[BE-S-04]` `SyncShadow` model + migration for conflict detection
+5. `[BE-S-05]` Echo prevention: skip broadcasting to originating device_id
+6. `[BE-S-06]` `GET /api/sync/delta?since=N` endpoint
+7. `[BE-S-07]` `GET /api/sync/full` endpoint
+8. `[BE-S-08]` `POST/GET/DELETE /api/sync/device(s)` for device registration
+9. `[BE-S-09]` Rate limiting: `throttle:sync` on sync endpoints
+10. `[BE-S-10]` Feature tests: sync push/pull round-trip, conflict detection
+
+### Phase 14  Real-time Broadcasting (~8 issues)
+**Milestone:** "Phase 14: Broadcasting & Realtime"
+
+1. `[BE-RT-01]` `BroadcastingAuthController` using Sanctum Bearer (NOT session)
+2. `[BE-RT-02]` `MarkerCreated`, `MarkerUpdated`, `MarkerDeleted` broadcast events
+3. `[BE-RT-03]` `LabelUpdated` broadcast event
+4. `[BE-RT-04]` `ProgressUpdated` broadcast event
+5. `[BE-RT-05]` Channel definition: `private-user.{userId}` with Sanctum auth
+6. `[BE-RT-06]` Reverb production config (REVERB_HOST, REVERB_PORT, Nginx proxy)
+7. `[BE-RT-07]` End-to-end WebSocket broadcast test
+8. `[BE-RT-08]` Rate limiting on `/api/broadcasting/auth`
+
+### Phase 15  Authentication Enhancements (~8 issues)
+**Milestone:** "Phase 15: Auth Enhancements"
+
+1. `[BE-A-01]` Apple Sign-In: manual JWKS JWT verification (NOT Socialite)
+2. `[BE-A-02]` `POST /api/auth/forgot-password`  queue mail with reset link
+3. `[BE-A-03]` `POST /api/auth/reset-password` with token validation
+4. `[BE-A-04]` `DELETE /api/auth/account`  cascade delete all user data
+5. `[BE-A-05]` `GET /api/user` with `sync_revision` + `last_sync_at`
+6. `[BE-A-06]` Multi-device: list/revoke tokens
+7. `[BE-A-07]` Device type field (`android | ios | web` enum)
+8. `[BE-A-08]` Feature tests for all auth edge cases
+
+### Phase 16  Version Catalog & Downloads (~8 issues)
+**Milestone:** "Phase 16: Version Downloads"
+
+1. `[BE-V-01]` `Version` model + migration (locale, shortName, longName, filename, fileSize, description)
+2. `[BE-V-02]` `GET /api/versions`  catalog with language grouping
+3. `[BE-V-03]` `GET /api/versions/{id}/download`  signed URL or direct stream
+4. `[BE-V-04]` Storage: configure Laravel Storage for YES2 file assets
+5. `[BE-V-05]` Version metadata API (bundled/internal version flag)
+6. `[BE-V-06]` Admin seeder: seed initial version catalog from YES2 files
+7. `[BE-V-07]` CDN integration (optional: S3 or local filesystem)
+8. `[BE-V-08]` Feature test: version catalog retrieval
+
+### Phase 17  Content APIs (~10 issues)
+**Milestone:** "Phase 17: Content APIs"
+
+1. `[BE-C-01]` `GET /api/reading-plans` with daily assignments
+2. `[BE-C-02]` `POST /api/reading-plans/{id}/progress`  mark reading complete
+3. `[BE-C-03]` `GET /api/devotions/today` + `GET /api/devotions/{date}`
+4. `[BE-C-04]` `GET /api/songs` + `GET /api/songs/{id}`
+5. `[BE-C-05]` Song search endpoint
+6. `[BE-C-06]` VOTD: date-based selection with category
+7. `[BE-C-07]` `GET /api/health`  system health check (DB/Redis/Reverb)
+8. `[BE-C-08]` CORS config for iOS/desktop clients
+9. `[BE-C-09]` API rate limits review and documentation
+10. `[BE-C-10]` OpenAPI spec update for all new endpoints
+
+### Phase 18  Production Deployment (~8 issues)
+**Milestone:** "Phase 18: Production"
+
+1. `[BE-D-01]` Laravel Forge environment setup (PHP 8.4, Nginx, PostgreSQL)
+2. `[BE-D-02]` Production `.env` checklist (APP_DEBUG=false, REVERB_HOST, etc.)
+3. `[BE-D-03]` Nginx config: PHP-FPM + Reverb WebSocket proxy
+4. `[BE-D-04]` SSL/TLS with Let's Encrypt (Forge automated)
+5. `[BE-D-05]` Horizon secured at `/horizon` (middleware: auth + role)
+6. `[BE-D-06]` PostgreSQL automated backup
+7. `[BE-D-07]` Zero-downtime deployment (GitHub Actions  Forge API trigger)
+8. `[BE-D-08]` Sentry error monitoring integration
 
 ---
 
-## 🚦 Implementation Order
+## Step-by-Step Autonomous Workflow
 
-Start with Phase 13 issues in order: #16 → #18 → #20 → #22 → #24 → #26 → #47 → #2 (epic close)
-Then Phase 14: #28 → #30 → #32 → #34 → #36
-Then Phase 15: #37 → #38 → #39
-Then Phase 16: #40 → #41
-Then Phase 17: #45 → #46
-Then Phase 18: #42 → #43 → #44
-
----
-
-## 🎯 SWORD Module Implementation Guide
-
-The SWORD module system reads binary `.sword` or `.zip` module files. The PHP implementation in PocketSword's backend is the reference. Key file formats:
-
-### zText (compressed Bible)
-- `.bzv` — verse index (4 bytes each: block number + verse offset within block)
-- `.bzz` — compressed data blocks (zlib)  
-- Read block → decompress → extract verse by offset
-
-### RawCom (commentary)
-- `.idx` — 6-byte entries: 4-byte offset + 2-byte length
-- `.dat` — raw commentary text
-- Read offset from idx → read length bytes from dat
-
-### RawLD4 (dictionary)
-- `.idx` — sorted list of keys with offsets
-- `.dat` — definition text per key
-- Binary search on key → read definition
-
-### Module Config (.conf)
-```ini
-[KJV]
-DataPath=./modules/texts/ztext/kjv/
-ModDrv=zText
-Lang=en
-Versification=KJV
-Encoding=UTF-8
-BlockType=CHAPTER
-CompressType=ZIP
+```
+LOOP:
+  1. Read memory.instruction.md
+  2. Run: gh issue list --repo maxymurm/androidbible-api --state open --limit 20
+  3. Pick the LOWEST numbered open issue (highest priority)
+  4. Read the issue body fully
+  5. Check out feature branch: git checkout -b feat/issue-N-short-description
+  6. Implement the feature following patterns above
+  7. Write/update Feature test
+  8. Run: php artisan test (must pass)
+  9. Run: ./vendor/bin/pint (linting)
+  10. Commit: git commit -m "feat(scope): description [Closes #N]"
+  11. Push: git push origin feat/issue-N-short-description
+  12. Create PR (or merge to main if small fix)
+  13. Update memory.instruction.md (Active Issue, Recent Decisions)
+  14. GOTO 1
 ```
 
 ---
 
-## 📝 Final Note
+## Anti-Patterns (Never Do)
 
-This is a YOLO autonomous run. You have full authority to:
-- Create, modify, delete any files in this repo
-- Create migrations and run them
-- Commit and push at any point
-- Close GitHub issues
-- Make architectural decisions within the established patterns
-
-Go. Start with issue #16.
+-  Don't put business logic in Controllers  use Services
+-  Don't use `Request::all()` or `$request->all()` without validation
+-  Don't authenticate WebSocket channels with session cookies  use Sanctum Bearer
+-  Don't use SWORD/CrossWire modules  YES2 binary format only
+-  Don't sync outside a DB transaction
+-  Don't expire Sanctum tokens automatically
+-  Don't use `dd()` or `dump()` in production code
+-  Don't skip echo prevention  always check device_id in broadcasts
+-  Don't create a web frontend (this is an API-only backend)
